@@ -1,4 +1,4 @@
-![](images/logo_200px.png)
+![](https://github.com/DHI/WatObs/raw/main/images/logo_200px.png)
 
 
 # WatObs: Access Water Observation Data
@@ -12,8 +12,8 @@ This Python package gives you convenient access to water observation data with a
 
 ## Example notebooks
 
-* [Altimetry_data](notebooks/Altimetry_data.ipynb)
-* [DMI_observations](notebooks/DMI_observations.ipynb)
+* [Altimetry_data](https://github.com/DHI/WatObs/blob/main/notebooks/Altimetry_data.ipynb)
+* [DMI_observations](https://github.com/DHI/WatObs/blob/main/notebooks/DMI_observations.ipynb)
 
 ## Satellite altimetry data 
 
@@ -21,7 +21,7 @@ Altimetry data (water level, significant wave height and wind speed) obtained fr
 
 DHI has an [altimetry portal](https://altimetry.dhigroup.com/purchase) with an [api](https://altimetry-shop-data-api.dhigroup.com/apidoc) where you can download the data. 
 
-![](images/altimetry_overview.png)
+![](https://github.com/DHI/WatObs/raw/main/images/altimetry_overview.png)
 
 ### Example
 
