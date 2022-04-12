@@ -70,6 +70,11 @@
         <div class="bd-sidebar__top"><div class="navbar-brand-box">
     <a class="navbar-brand text-wrap" href="#">
       
+        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+        
+      
+      
+      <img src="_static/logo_200px.png" class="logo" alt="logo">
       
       
       <h1 class="site-logo" id="site-title">WatObs  documentation</h1>
@@ -235,7 +240,11 @@ title="Print to PDF"
 <li class="toctree-l2"><a class="reference internal" href="getting_started.html#installation">Installation</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">API Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api.html#altimetry">Altimetry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#dmi-ocean-observations">DMI ocean observations</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </section>
