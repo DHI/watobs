@@ -16,7 +16,7 @@ setuptools.setup(
             "myst-parser",
             "sphinx-book-theme",
         ],
-        "test": ["pytest", "mikeio"],
+        "test": ["pytest", "mikeio", "geopandas"],
     },
     author="Jesper Sandvig Mariegaard",
     author_email="jem@dhigroup.com",
