@@ -7,7 +7,8 @@ WatObs: Access water observation data
 
 This repository makes it easy to get access to water observation data.
 
-.. image:: https://github.com/DHI/template-python-library/raw/main/images/logo_200px.png
+.. image:: https://github.com/DHI/WatObs/raw/main/images/logo_200px.png
+   
 
 .. toctree::
    
