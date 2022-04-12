@@ -13,4 +13,4 @@ This repository makes it easy to get access to water observation data.
 .. toctree::
    
    getting_started.md
-
+   api.md
