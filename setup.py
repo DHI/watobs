@@ -4,20 +4,20 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="my_library",
+    name="watobs",
     version="0.0.1",
     install_requires=["numpy"],
     extras_require={
         "dev": ["pytest","flake8","black","sphinx", "myst-parser","sphinx-book-theme"],
         "test": ["pytest"],
     },
-    author="First Last",
-    author_email="initials@dhigroup.com",
-    description="Useful library",
+    author="Jesper Sandvig Mariegaard",
+    author_email="jem@dhigroup.com",
+    description="Access water observation data",
     license="MIT",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/DHI/my_library",
+    url="https://github.com/DHI/watobs",
     packages=setuptools.find_packages(),
     include_package_data=True,
     classifiers=[

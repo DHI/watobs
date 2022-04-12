@@ -1,6 +1,6 @@
-import my_library as ml
+import watobs as wo
 
 
 def test_module_docstring():
 
-    assert "useful" in ml.__doc__
+    assert "useful" in wo.__doc__

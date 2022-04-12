@@ -17,9 +17,9 @@
 
 # -- Project information -----------------------------------------------------
 
-project = "my_library"
-copyright = "2021, First Last"
-author = "First Last"
+project = "WatObs"
+copyright = "2022, DHI"
+author = "Jesper Sandvig Mariegaard"
 
 # The full version, including alpha/beta/rc tags
 release = ""
