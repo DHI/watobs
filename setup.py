@@ -6,9 +6,16 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="watobs",
     version="0.0.1",
-    install_requires=["numpy"],
+    install_requires=["numpy", "pandas", "requests", "matplotlib"],
     extras_require={
-        "dev": ["pytest","flake8","black","sphinx", "myst-parser","sphinx-book-theme"],
+        "dev": [
+            "pytest",
+            "flake8",
+            "black",
+            "sphinx",
+            "myst-parser",
+            "sphinx-book-theme",
+        ],
         "test": ["pytest"],
     },
     author="Jesper Sandvig Mariegaard",
