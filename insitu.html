@@ -315,7 +315,7 @@ title="Print to PDF"
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">fmskill.data.dmi</span> <span class="kn">import</span> <span class="n">DMIOceanObsRepository</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">watobs</span> <span class="kn">import</span> <span class="n">DMIOceanObsRepository</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dmi</span> <span class="o">=</span> <span class="n">DMIOceanObsRepository</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="s2">&quot;e11...&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">dmi</span><span class="o">.</span><span class="n">get_observed_data</span><span class="p">(</span><span class="n">station_id</span><span class="o">=</span><span class="s2">&quot;30336&quot;</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="s2">&quot;2018-03-04&quot;</span><span class="p">,</span> <span class="n">end_time</span><span class="o">=</span><span class="s2">&quot;2018-03-06&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
