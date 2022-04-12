@@ -63,7 +63,7 @@ class DMIOceanObsRepository:
 
         Examples
         ========
-        >>> from fmskill.data.dmi import DMIOceanObsRepository
+        >>> from watobs import DMIOceanObsRepository
         >>> dmi = DMIOceanObsRepository(api_key="e11...")
         >>> df = dmi.get_observed_data(station_id="30336", start_time="2018-03-04", end_time="2018-03-06")
         >>> df.head()
