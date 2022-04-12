@@ -1,6 +1,9 @@
 # API Documentation
 
+
 ## Altimetry
+
+![](images/altimetry_overview.png)
 
 ```{eval-rst}
 .. autoclass:: watobs.DHIAltimetryRepository
@@ -12,6 +15,8 @@
 
 
 ## DMI ocean observations
+
+![](images/DMI_obs_positions.png)
 
 ```{eval-rst}
 .. autoclass:: watobs.DMIOceanObsRepository
