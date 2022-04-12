@@ -1,1 +1,2 @@
-"""WatObs makes it easy to access water observation data"""
+from .dmi import DMIOceanObsRepository
+from .altimetry import DHIAltimetryRepository
