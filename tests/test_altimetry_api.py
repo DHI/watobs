@@ -7,11 +7,6 @@ from watobs import DHIAltimetryRepository
 from watobs.altimetry import AltimetryData
 from mikeio import Dfs0, eum
 
-try:
-    import geopandas as gpd
-except ImportError:
-    pytest.skip("geopandas not available", allow_module_level=True)
-
 
 def requires_DHI_ALTIMETRY_API_KEY():
     api_key = os.environ.get("DHI_ALTIMETRY_API_KEY")
@@ -81,6 +76,12 @@ def test_plot_observation_stats(repo):
 
 @requires_DHI_ALTIMETRY_API_KEY()
 def test_get_spatial_coverage(repo):
+        
+    try:
+        import geopandas as gpd
+    except ImportError:
+        pytest.skip("geopandas not available", allow_module_level=True)
+        
     gdf = repo.get_spatial_coverage(
         area="lon=10.9&lat=55.9&radius=40", start_time="2021-1-1", end_time="2021-1-5"
     )
