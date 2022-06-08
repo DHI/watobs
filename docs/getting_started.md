@@ -2,6 +2,14 @@
 
 ## Installation
 
+From PyPI: 
+
+```
+pip install watobs
+```
+
+Or development version: 
+
 ```
 pip install https://github.com/DHI/WatObs/archive/refs/heads/main.zip
 ```
