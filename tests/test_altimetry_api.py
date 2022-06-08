@@ -5,7 +5,7 @@ import os
 import pytest
 from watobs import DHIAltimetryRepository
 from watobs.altimetry import AltimetryData
-from mikeio import Dfs0, eum
+import mikeio
 
 
 def requires_DHI_ALTIMETRY_API_KEY():
@@ -76,12 +76,12 @@ def test_plot_observation_stats(repo):
 
 @requires_DHI_ALTIMETRY_API_KEY()
 def test_get_spatial_coverage(repo):
-        
+
     try:
         import geopandas as gpd
     except ImportError:
         pytest.skip("geopandas not available", allow_module_level=True)
-        
+
     gdf = repo.get_spatial_coverage(
         area="lon=10.9&lat=55.9&radius=40", start_time="2021-1-1", end_time="2021-1-5"
     )
@@ -128,9 +128,9 @@ def test_AltimetryData_to_dfs0(ad, tmpdir):
     outfilename = os.path.join(tmpdir, "all_alti.dfs0")
     ad.to_dfs0(outfilename)
     assert os.path.exists(outfilename)
-    dfs = Dfs0(outfilename)
-    assert dfs.items[0].type == eum.EUMType.Latitude_longitude
-    assert dfs.items[2].type == eum.EUMType.Water_Level
+    dfs = mikeio.open(outfilename)
+    assert dfs.items[0].type == mikeio.EUMType.Latitude_longitude
+    assert dfs.items[2].type == mikeio.EUMType.Water_Level
 
     outfilename = os.path.join(tmpdir, "alti_c2.dfs0")
     ad.to_dfs0(outfilename, satellite="c2")
