@@ -17,6 +17,11 @@ setuptools.setup(
             "sphinx-book-theme",
         ],
         "test": ["pytest", "mikeio"],
+        "notebooks": [
+            "nbformat",
+            "nbconvert",
+            "jupyter",
+        ],
     },
     author="Jesper Sandvig Mariegaard",
     author_email="jem@dhigroup.com",
