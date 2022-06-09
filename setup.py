@@ -21,6 +21,8 @@ setuptools.setup(
             "nbformat",
             "nbconvert",
             "jupyter",
+            "folium",
+            "geopandas",
         ],
     },
     author="Jesper Sandvig Mariegaard",
