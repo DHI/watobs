@@ -23,6 +23,8 @@ setuptools.setup(
             "jupyter",
             "folium",
             "geopandas",
+            "xarray",
+            "netcdf4"
         ],
     },
     author="Jesper Sandvig Mariegaard",
