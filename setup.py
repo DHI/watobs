@@ -26,6 +26,7 @@ setuptools.setup(
             "geopandas",
             "xarray",
             "netcdf4",
+            "NDBC",
         ],
     },
     author="Jesper Sandvig Mariegaard",
