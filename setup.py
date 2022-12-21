@@ -23,6 +23,7 @@ setuptools.setup(
             "jupyter",
             "folium",
             "rtree",
+            "mapclassify",
             "geopandas",
             "xarray",
             "netcdf4",
