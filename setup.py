@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="watobs",
-    version="0.2.dev0",
+    version="0.2.dev1",
     install_requires=["numpy", "pandas", "requests", "matplotlib"],
     extras_require={
         "dev": [
@@ -23,6 +23,7 @@ setuptools.setup(
             "jupyter",
             "folium",
             "geopandas",
+            "NDBC",
         ],
     },
     author="Jesper Sandvig Mariegaard",
