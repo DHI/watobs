@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="watobs",
-    version="0.2.dev1",
+    version="0.2.dev2",
     install_requires=["numpy", "pandas", "requests", "matplotlib"],
     extras_require={
         "dev": [
@@ -22,7 +22,11 @@ setuptools.setup(
             "nbconvert",
             "jupyter",
             "folium",
+            "rtree",
+            "mapclassify",
             "geopandas",
+            "xarray",
+            "netcdf4",
             "NDBC",
         ],
     },
