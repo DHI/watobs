@@ -9,6 +9,9 @@ def to_pandas_df(json_input):
     o = json.loads(json_input)
     for f in o["schema"]["fields"]:
         ac.append(f["name"])
+    if "data" not in o:
+        return pd.DataFrame(columns=ac)
+
     df = pd.read_json(
         json.dumps(o["data"]), orient="values"
     )  # Create the dataframe from values - index is being created automatically, that should be ignored!
@@ -35,7 +38,16 @@ class DatafarmRepository:
     Examples
     ========
     >>> with DatafarmRepository(api_key="e11...") as datafarm:
-    >>>     datafarm.list_time_series()
+    >>>     all_time_series = datafarm.list_time_series()
+    >>>     time_series_data = datafarm.get_data(
+    >>>         time_series=[
+    >>>             "TNWB_wind_RVO-FUGRO_unfiltered_WS-130",
+    >>>         ],
+    >>>         range_start="2015-03-24T10:16:45.034Z",
+    >>>         range_end="2023-03-24T10:16:45.034Z",
+    >>>         limit_row_count=0,
+    >>>         ascending=True,
+    >>>     )
 
     """
 
@@ -60,14 +72,38 @@ class DatafarmRepository:
     def get_data(
         self,
         time_series,
-        iso8601_timestamp=True,
-        range_start="2015-03-24T10:16:45.034Z",
-        range_end="2023-03-24T10:16:45.034Z",
-        fields=None,
-        qualities=None,
+        range_start,
+        range_end,
+        iso8601_timestamp=True,  # TODO: Do we need this?
+        fields=None,  # TODO: Do we need this?
+        qualities=None,  # TODO: Do we need this?
         limit_row_count=0,
         ascending=True,
     ):
+        """Get data from Datafarm.
+
+        Parameters
+        ==========
+        time_series : str or list of str
+            The time series to get data from.
+        range_start : str
+            The start of the range to get data from.
+        range_end : str
+            The end of the range to get data from.
+        iso8601_timestamp : bool, optional
+            Whether to use ISO8601 timestamps.
+            Defaults to True.
+        fields : list of str, optional
+            TODO: add description
+        qualities : list of str, optional
+            TODO: add description
+        limit_row_count : int, optional
+            The maximum number of rows to return.
+            Defaults to 0, which means no limit.
+        ascending : bool, optional
+            Whether to sort the data in ascending order.
+            Defaults to True.
+        """
         qualities = qualities or []
         fields = fields or []
         sort_order = "soAscending" if ascending else "soDescending"
@@ -83,16 +119,18 @@ class DatafarmRepository:
             "RangeEnd": range_end,
             "RangeStart": range_start,
             "SortOrder": sort_order,
+            # "Fields": fields,   TODO: add fields
         }
         response = self.session.post(url, json=body, headers=self.headers)
         response.raise_for_status()
 
         data = response.json()[0]
+        assert data is not None
 
         return to_pandas_df(json.dumps(data))
 
     @property
-    def time_series_fields(self):
+    def time_series_metadata(self):
         r = requests.get(
             self.API_URL + "/MetaData/Entity",
             headers=self.headers,
@@ -134,12 +172,17 @@ if __name__ == "__main__":
     dotenv.load_dotenv()
     api_key = os.getenv("DATAFARM_API_KEY")
     assert api_key is not None
-    time_series = "TNWB_wind_RVO-FUGRO_unfiltered_WS-130"
 
     with DatafarmRepository(api_key) as dfr:
         assert dfr.access_token is not None
+        print(dfr.list_time_series())
+        print(dfr.time_series_metadata)
+        time_series = "TNWB_wind_RVO-FUGRO_unfiltered_WS-130"
         data = dfr.get_data(
-            time_series,
+            time_series=[
+                # "Bor1_currents_RVO-FUGRO_derived_CS",
+                "TNWB_wind_RVO-FUGRO_unfiltered_WS-130",
+            ],
             iso8601_timestamp=False,
             range_start="2015-03-24T10:16:45.034Z",
             range_end="2023-03-24T10:16:45.034Z",
