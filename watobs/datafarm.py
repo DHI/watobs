@@ -175,30 +175,3 @@ class DatafarmRepository:
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
-
-
-if __name__ == "__main__":
-    import os
-
-    import dotenv
-
-    dotenv.load_dotenv()
-    api_key = os.getenv("DATAFARM_API_KEY")
-    assert api_key is not None
-
-    with DatafarmRepository(api_key) as dfr:
-        assert dfr.access_token is not None
-        print(dfr.list_time_series())
-        print(dfr.time_series_metadata)
-        time_series = "TNWB_wind_RVO-FUGRO_unfiltered_WS-130"
-        data = dfr.get_data(
-            time_series_id=[
-                # "Bor1_currents_RVO-FUGRO_derived_CS",
-                "TNWB_wind_RVO-FUGRO_unfiltered_WS-130",
-            ],
-            iso8601_timestamp=False,
-            start="2015-03-24T10:16:45.034Z",
-            end="2023-03-24T10:16:45.034Z",
-            limit=10,
-        )
-        print(data)
