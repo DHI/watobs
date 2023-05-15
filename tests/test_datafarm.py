@@ -2,7 +2,7 @@ import json
 import os
 import pandas as pd
 import pytest
-from watobs.datafarm import DatafarmRepository, to_pandas_df
+from watobs.datafarm import DatafarmRepository, _parse_datetime, to_pandas_df
 
 
 def requires_DATAFARM_API_KEY():
@@ -145,3 +145,23 @@ def test_to_dataframe_empty(json_input_empty):
 def test_to_dataframe_error():
     with pytest.raises(ValueError):
         to_pandas_df("{}")
+
+
+def test_parse_datetime_valid():
+    dt = "2023-05-15T14:30:00"
+    result = _parse_datetime(dt)
+    expected = "2023-05-15T14:30:00Z"
+    assert result == expected
+
+
+def test_parse_datetime_invalid():
+    dt = "2023-50-50"
+    with pytest.raises(ValueError):
+        _parse_datetime(dt)
+
+
+def test_parse_datetime_other_formate():
+    dt = "05/15/2023 14:30:00"
+    result = _parse_datetime(dt)
+    expected = "2023-05-15T14:30:00Z"
+    assert result == expected
