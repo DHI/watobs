@@ -7,6 +7,10 @@ import pandas.io.json as pj
 def to_pandas_df(json_input: str) -> pd.DataFrame:
     columns = []
     data = json.loads(json_input)
+
+    if "schema" not in data:
+        raise ValueError("No schema in data")
+
     for f in data["schema"]["fields"]:
         columns.append(f["name"])
     if "data" not in data:
@@ -129,7 +133,6 @@ class DatafarmRepository:
         response.raise_for_status()
 
         data = response.json()[0]
-        assert data is not None
 
         return to_pandas_df(json.dumps(data))
 
@@ -150,15 +153,21 @@ class DatafarmRepository:
         data = {"Token": self.api_key}
         response = self.session.post(url, json=data)
         response.raise_for_status()
-        self.access_token = response.headers["Access-Token"]
+        try:
+            self.access_token = response.headers["Access-Token"]
+        except KeyError:
+            raise KeyError(
+                f"resopnse.json() = {response.json()} Could not get access token. Check that your API key is correct."
+            )
         self.headers = {"Access-Token": self.access_token}
-        return self.access_token
 
     def close(self):
         """Close the connection to the Datafarm API."""
         url = self.API_URL + "/Login/Logoff"
         response = self.session.post(url, headers=self.headers)
         response.raise_for_status()
+        self.access_token = None
+        self.headers = None
 
     def __enter__(self):
         self.connect()
