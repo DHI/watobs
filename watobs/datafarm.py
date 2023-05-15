@@ -4,29 +4,33 @@ import pandas as pd
 import pandas.io.json as pj
 
 
-def to_pandas_df(json_input):
-    ac = []  # Column names
-    o = json.loads(json_input)
-    for f in o["schema"]["fields"]:
-        ac.append(f["name"])
-    if "data" not in o:
-        return pd.DataFrame(columns=ac)
+def to_pandas_df(json_input: str) -> pd.DataFrame:
+    columns = []
+    data = json.loads(json_input)
+    for f in data["schema"]["fields"]:
+        columns.append(f["name"])
+    if "data" not in data:
+        return pd.DataFrame(columns=columns)
 
     df = pd.read_json(
-        json.dumps(o["data"]), orient="values"
+        json.dumps(data["data"]), orient="values"
     )  # Create the dataframe from values - index is being created automatically, that should be ignored!
-    df.columns = ac  # Rename columns to correct names
-    zipped = zip(
-        o["schema"]["fields"], pj.build_table_schema(df, index=False)["fields"]
-    )  # ignoring index from the newly created frame
-    for m, l in zipped:
-        if m["type"] != l["type"]:
-            if m["type"] == "datetime":
-                df.loc[:, m["name"]] = pd.to_datetime(df.loc[:, m["name"]], unit="ms")
-            if m["type"] == "number":
-                df.loc[:, m["name"]] = df.loc[:, m["name"]].astype(float)
+    df.columns = columns
+
+    dict_fields = data["schema"]["fields"]
+    df_fields = pj.build_table_schema(df, index=False)["fields"]
+    for dict_field, df_field in zip(dict_fields, df_fields):
+        if dict_field["type"] != df_field["type"]:
+            if dict_field["type"] == "datetime":
+                df.loc[:, dict_field["name"]] = pd.to_datetime(
+                    df.loc[:, dict_field["name"]], unit="ms"
+                )
+            if dict_field["type"] == "number":
+                df.loc[:, dict_field["name"]] = df.loc[:, dict_field["name"]].astype(
+                    float
+                )
     df.set_index(
-        o["schema"]["primaryKey"][0], inplace=True
+        data["schema"]["primaryKey"][0], inplace=True
     )  # Setting index in actual dataframe, Assume index name from PK
     return df
 
@@ -71,24 +75,24 @@ class DatafarmRepository:
 
     def get_data(
         self,
-        time_series,
-        range_start,
-        range_end,
-        iso8601_timestamp=True,  # TODO: Do we need this?
-        fields=None,  # TODO: Do we need this?
-        qualities=None,  # TODO: Do we need this?
-        limit_row_count=0,
+        time_series_id,
+        start,
+        end,
+        iso8601_timestamp=True,
+        fields=None,
+        qualities=None,
+        limit=0,
         ascending=True,
     ):
         """Get data from Datafarm.
 
         Parameters
         ==========
-        time_series : str or list of str
+        time_series_id : str or list of str
             The time series to get data from.
-        range_start : str
+        start : str
             The start of the range to get data from.
-        range_end : str
+        end : str
             The end of the range to get data from.
         iso8601_timestamp : bool, optional
             Whether to use ISO8601 timestamps.
@@ -97,7 +101,7 @@ class DatafarmRepository:
             TODO: add description
         qualities : list of str, optional
             TODO: add description
-        limit_row_count : int, optional
+        limit : int, optional
             The maximum number of rows to return.
             Defaults to 0, which means no limit.
         ascending : bool, optional
@@ -107,17 +111,17 @@ class DatafarmRepository:
         qualities = qualities or []
         fields = fields or []
         sort_order = "soAscending" if ascending else "soDescending"
-        if isinstance(time_series, str):
-            time_series = [time_series]
+        if isinstance(time_series_id, str):
+            time_series_id = [time_series_id]
 
         url = self.API_URL + "/TimeSeries/ExtractData"
         body = {
-            "TimeSeries": time_series,
+            "TimeSeries": time_series_id,
             "ISO8601_TimeStamp": iso8601_timestamp,
-            "LimitRowCount": limit_row_count,
+            "LimitRowCount": limit,
             "Qualities": qualities,
-            "RangeEnd": range_end,
-            "RangeStart": range_start,
+            "RangeEnd": end,
+            "RangeStart": start,
             "SortOrder": sort_order,
             # "Fields": fields,   TODO: add fields
         }
@@ -179,13 +183,13 @@ if __name__ == "__main__":
         print(dfr.time_series_metadata)
         time_series = "TNWB_wind_RVO-FUGRO_unfiltered_WS-130"
         data = dfr.get_data(
-            time_series=[
+            time_series_id=[
                 # "Bor1_currents_RVO-FUGRO_derived_CS",
                 "TNWB_wind_RVO-FUGRO_unfiltered_WS-130",
             ],
             iso8601_timestamp=False,
-            range_start="2015-03-24T10:16:45.034Z",
-            range_end="2023-03-24T10:16:45.034Z",
-            limit_row_count=10,
+            start="2015-03-24T10:16:45.034Z",
+            end="2023-03-24T10:16:45.034Z",
+            limit=10,
         )
         print(data)
