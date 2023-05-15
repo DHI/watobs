@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import pandas as pd
@@ -162,6 +163,13 @@ def test_parse_datetime_invalid():
 
 def test_parse_datetime_other_formate():
     dt = "05/15/2023 14:30:00"
+    result = _parse_datetime(dt)
+    expected = "2023-05-15T14:30:00Z"
+    assert result == expected
+
+
+def test_parse_datetime_object():
+    dt = datetime.datetime(2023, 5, 15, 14, 30, 0)
     result = _parse_datetime(dt)
     expected = "2023-05-15T14:30:00Z"
     assert result == expected

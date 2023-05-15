@@ -1,3 +1,4 @@
+import datetime
 import requests
 import json
 import pandas as pd
@@ -86,8 +87,8 @@ class DatafarmRepository:
     def get_data(
         self,
         time_series_id,
-        start,
-        end,
+        start=datetime.datetime(1900, 1, 1, 0, 0, 0, 0),
+        end=datetime.datetime.now(),
         iso8601_timestamp=True,
         fields=None,
         qualities=None,
@@ -100,9 +101,9 @@ class DatafarmRepository:
         ==========
         time_series_id : str or list of str
             The time series to get data from.
-        start : str
+        start : str | datetime.datetime
             The start of the range to get data from.
-        end : str
+        end : str | datetime.datetime, optional
             The end of the range to get data from.
         iso8601_timestamp : bool, optional
             Whether to use ISO8601 timestamps.
