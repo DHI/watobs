@@ -147,14 +147,49 @@ class DatafarmRepository:
 
     @property
     def time_series_metadata(self):
-        r = requests.get(
-            self.API_URL + "/MetaData/Entity",
-            headers=self.headers,
-            params={"aClassId": "Timeseries"},
-        )
-        r.raise_for_status()
-        data = r.json()
-        return to_pandas_df(json.dumps(data))
+        endpoint = "/MetaData/Entity"
+        params = {"aClassId": "Timeseries"}
+        return self._get_pandas_df(endpoint, params)
+
+    @property
+    def time_series_source_descriptions(self):
+        endpoint = "/List/TimeSeriesSourceDescriptions"
+        return self._get_pandas_df(endpoint)
+
+    @property
+    def units(self):
+        endpoint = "/List/Units"
+        return self._get_pandas_df(endpoint)
+
+    @property
+    def time_series_types(self):
+        endpoint = "/List/TimeSeriesTypes"
+        return self._get_pandas_df(endpoint)
+
+    @property
+    def time_series_status(self):
+        endpoint = "/List/TimeSeriesStatus"
+        return self._get_pandas_df(endpoint)
+
+    @property
+    def qualities(self):
+        endpoint = "/List/Qualities"
+        return self._get_pandas_df(endpoint)
+
+    @property
+    def parameters(self):
+        endpoint = "/List/Parameters"
+        return self._get_pandas_df(endpoint)
+
+    @property
+    def medias(self):
+        endpoint = "/List/Medias"
+        return self._get_pandas_df(endpoint)
+
+    @property
+    def locations(self):
+        endpoint = "/List/Locations"
+        return self._get_pandas_df(endpoint)
 
     def connect(self):
         """Connect to the Datafarm API."""
@@ -178,36 +213,16 @@ class DatafarmRepository:
         self.access_token = None
         self.headers = None
 
+    def _get_pandas_df(self, endpoint, params=None):
+        url = self.API_URL + endpoint
+        r = requests.get(url, headers=self.headers, params=params)
+        r.raise_for_status()
+        data = r.json()
+        return to_pandas_df(json.dumps(data))
+
     def __enter__(self):
         self.connect()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
-
-
-if __name__ == "__main__":
-    import os
-
-    import dotenv
-
-    dotenv.load_dotenv()
-    api_key = os.getenv("DATAFARM_API_KEY")
-    assert api_key is not None
-
-    with DatafarmRepository(api_key) as dfr:
-        assert dfr.access_token is not None
-        print(dfr.list_time_series())
-        print(dfr.time_series_metadata)
-        time_series = "TNWB_wind_RVO-FUGRO_unfiltered_WS-130"
-        data = dfr.get_data(
-            time_series_id=[
-                # "Bor1_currents_RVO-FUGRO_derived_CS",
-                "TNWB_wind_RVO-FUGRO_unfiltered_WS-130",
-            ],
-            iso8601_timestamp=False,
-            start="2015-03-24T10:16:45.034Z",
-            end="2023-03-24T10:16:45.034Z",
-            limit=10,
-        )
-        print(data)

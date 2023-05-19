@@ -66,7 +66,7 @@ def json_input_empty() -> str:
 
 
 @requires_DATAFARM_API_KEY()
-def test_list_time_series(repo):
+def test_list_time_series(repo: DatafarmRepository):
     assert repo.access_token is not None
     assert repo.list_time_series() is not None
 
@@ -173,3 +173,76 @@ def test_parse_datetime_object():
     result = _parse_datetime(dt)
     expected = "2023-05-15T14:30:00Z"
     assert result == expected
+
+
+@requires_DATAFARM_API_KEY()
+def test_units(repo: DatafarmRepository):
+    units = repo.units
+    assert units is not None
+    assert isinstance(units, pd.DataFrame)
+    assert "IDName" in units.columns.tolist()
+    assert "l/min" in units["IDName"].tolist()
+
+
+@requires_DATAFARM_API_KEY()
+def test_time_series_source_descriptions(repo: DatafarmRepository):
+    time_series_source_descriptions = repo.time_series_source_descriptions
+    assert time_series_source_descriptions is not None
+    assert isinstance(time_series_source_descriptions, pd.DataFrame)
+    assert "IDName" in time_series_source_descriptions.columns.tolist()
+    assert "LEG_wl_RWS" in time_series_source_descriptions["IDName"].tolist()
+
+
+@requires_DATAFARM_API_KEY()
+def test_time_series_types(repo: DatafarmRepository):
+    time_series_types = repo.time_series_types
+    assert time_series_types is not None
+    assert isinstance(time_series_types, pd.DataFrame)
+    assert "IDName" in time_series_types.columns.tolist()
+    assert "BSH-dat-meteo" in time_series_types["IDName"].tolist()
+
+
+@requires_DATAFARM_API_KEY()
+def test_time_series_status(repo: DatafarmRepository):
+    time_series_status = repo.time_series_status
+    assert time_series_status is not None
+    assert isinstance(time_series_status, pd.DataFrame)
+    assert "IDName" in time_series_status.columns.tolist()
+    assert "new" in time_series_status["IDName"].tolist()
+
+
+@requires_DATAFARM_API_KEY()
+def test_qualities(repo: DatafarmRepository):
+    qualities = repo.qualities
+    assert qualities is not None
+    assert isinstance(qualities, pd.DataFrame)
+    assert "IDName" in qualities.columns.tolist()
+    assert "ok" in qualities["IDName"].tolist()
+
+
+@requires_DATAFARM_API_KEY()
+def test_parameters(repo: DatafarmRepository):
+    parameters = repo.parameters
+    assert parameters is not None
+    assert isinstance(parameters, pd.DataFrame)
+    assert "IDName" in parameters.columns.tolist()
+    assert "Lat" in parameters["IDName"].tolist()
+    assert "Lon" in parameters["IDName"].tolist()
+
+
+@requires_DATAFARM_API_KEY()
+def test_medias(repo: DatafarmRepository):
+    medias = repo.medias
+    assert medias is not None
+    assert isinstance(medias, pd.DataFrame)
+    assert "IDName" in medias.columns.tolist()
+    assert "waves" in medias["IDName"].tolist()
+
+
+@requires_DATAFARM_API_KEY()
+def test_locations(repo: DatafarmRepository):
+    locations = repo.locations
+    assert locations is not None
+    assert isinstance(locations, pd.DataFrame)
+    assert "IDName" in locations.columns.tolist()
+    assert "Bor1" in locations["IDName"].tolist()
