@@ -1,8 +1,10 @@
 import datetime
-import requests
 import json
+from functools import cached_property
+
 import pandas as pd
 import pandas.io.json as pj
+import requests
 
 
 def to_pandas_df(json_input: str) -> pd.DataFrame:
@@ -145,48 +147,48 @@ class DatafarmRepository:
 
         return to_pandas_df(json.dumps(data))
 
-    @property
+    @cached_property
     def time_series_metadata(self):
         endpoint = "/MetaData/Entity"
         params = {"aClassId": "Timeseries"}
         return self._get_pandas_df(endpoint, params)
 
-    @property
+    @cached_property
     def time_series_source_descriptions(self):
         endpoint = "/List/TimeSeriesSourceDescriptions"
         return self._get_pandas_df(endpoint)
 
-    @property
+    @cached_property
     def units(self):
         endpoint = "/List/Units"
         return self._get_pandas_df(endpoint)
 
-    @property
+    @cached_property
     def time_series_types(self):
         endpoint = "/List/TimeSeriesTypes"
         return self._get_pandas_df(endpoint)
 
-    @property
+    @cached_property
     def time_series_status(self):
         endpoint = "/List/TimeSeriesStatus"
         return self._get_pandas_df(endpoint)
 
-    @property
+    @cached_property
     def qualities(self):
         endpoint = "/List/Qualities"
         return self._get_pandas_df(endpoint)
 
-    @property
+    @cached_property
     def parameters(self):
         endpoint = "/List/Parameters"
         return self._get_pandas_df(endpoint)
 
-    @property
+    @cached_property
     def medias(self):
         endpoint = "/List/Medias"
         return self._get_pandas_df(endpoint)
 
-    @property
+    @cached_property
     def locations(self):
         endpoint = "/List/Locations"
         return self._get_pandas_df(endpoint)
