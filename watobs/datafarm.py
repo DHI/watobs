@@ -111,9 +111,9 @@ class DatafarmRepository:
             Whether to use ISO8601 timestamps.
             Defaults to True.
         fields : list of str, optional
-            TODO: add description
+            fields/columns to return
         qualities : list of str, optional
-            TODO: add description
+            Filter the data by qualities.
         limit : int, optional
             The maximum number of rows to return.
             Defaults to 0, which means no limit.
@@ -138,7 +138,7 @@ class DatafarmRepository:
             "RangeEnd": end,
             "RangeStart": start,
             "SortOrder": sort_order,
-            # "Fields": fields,   TODO: add fields
+            "Fields": fields,
         }
         response = self.session.post(url, json=body, headers=self.headers)
         response.raise_for_status()
@@ -192,6 +192,16 @@ class DatafarmRepository:
     def locations(self):
         endpoint = "/List/Locations"
         return self._get_pandas_df(endpoint)
+
+    @cached_property
+    def quality_level_to_name(self):
+        df = self.qualities
+        return {df["Level"].iloc[i]: df["IDName"].iloc[i] for i in range(len(df))}
+
+    @cached_property
+    def quality_name_to_level(self):
+        df = self.qualities
+        return {df["IDName"].iloc[i]: df["Level"].iloc[i] for i in range(len(df))}
 
     def connect(self):
         """Connect to the Datafarm API."""
