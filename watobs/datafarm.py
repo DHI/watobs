@@ -76,11 +76,9 @@ class DatafarmRepository:
         self.access_token = None
         self.headers = None
 
-    def list_time_series(self, fields=None):
-        url = self.API_URL + "/TimeSeries/List"
-        fields = fields or []
-        data = {"Fields": fields}
-        response = requests.post(url, headers=self.headers)
+    def list_time_series(self) -> pd.DataFrame:
+        url = self.API_URL + "/List/TimeSeries/"
+        response = requests.get(url, headers=self.headers)
         response.raise_for_status()
         data = response.json()
 
