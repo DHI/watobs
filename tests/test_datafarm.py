@@ -68,8 +68,7 @@ def json_input_empty() -> str:
 
 @requires_DATAFARM_API_KEY()
 def test_list_time_series(repo: DatafarmRepository):
-    assert repo.access_token is not None
-    assert repo.list_time_series() is not None
+    assert len(repo.list_time_series()) > 2000
 
 
 @requires_DATAFARM_API_KEY()
