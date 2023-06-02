@@ -106,7 +106,6 @@ class DatafarmRepository:
         time_series_id,
         start=datetime.datetime(1900, 1, 1, 0, 0, 0, 0),
         end=datetime.datetime.now(),
-        iso8601_timestamp=True,
         fields=None,
         qualities=None,
         limit=0,
@@ -122,9 +121,6 @@ class DatafarmRepository:
             The start of the range to get data from.
         end : str | datetime.datetime, optional
             The end of the range to get data from.
-        iso8601_timestamp : bool, optional
-            Whether to use ISO8601 timestamps.
-            Defaults to True.
         fields : list of str, optional
             fields/columns to return
         qualities : list of str, optional
@@ -147,7 +143,7 @@ class DatafarmRepository:
         url = self.API_URL + "/TimeSeries/ExtractData"
         body = {
             "TimeSeries": time_series_id,
-            "ISO8601_TimeStamp": iso8601_timestamp,
+            "ISO8601_TimeStamp": False,
             "LimitRowCount": limit,
             "Qualities": qualities,
             "RangeEnd": end,

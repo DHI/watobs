@@ -87,7 +87,6 @@ def test_get_data(repo: DatafarmRepository):
     time_series = "TNWB_wind_RVO-FUGRO_unfiltered_WS-130"
     data = repo.get_data(
         time_series_id=[time_series],
-        iso8601_timestamp=False,
         start="2015-03-24T10:16:45.034Z",
         end="2023-03-24T10:16:45.034Z",
         limit=10,
@@ -104,7 +103,6 @@ def test_get_data_5_rows(repo: DatafarmRepository):
     time_series = "TNWB_wind_RVO-FUGRO_unfiltered_WS-130"
     data = repo.get_data(
         time_series_id=[time_series],
-        iso8601_timestamp=False,
         start="2015-03-24T10:16:45.034Z",
         end="2023-03-24T10:16:45.034Z",
         limit=5,
@@ -117,7 +115,6 @@ def test_no_data(repo: DatafarmRepository):
     time_series_no_data = "Bor1_currents_RVO-FUGRO_derived_CS"
     data = repo.get_data(
         time_series_id=[time_series_no_data],
-        iso8601_timestamp=False,
         start="2015-03-24T10:16:45.034Z",
         end="2023-03-24T10:16:45.034Z",
         limit=10,
