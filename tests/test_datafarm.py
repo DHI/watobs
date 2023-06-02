@@ -1,3 +1,4 @@
+import base64
 import datetime
 import json
 import os
@@ -241,8 +242,97 @@ def test_medias(repo: DatafarmRepository):
 
 @requires_DATAFARM_API_KEY()
 def test_locations(repo: DatafarmRepository):
+    assert hasattr(repo, "locations")
     locations = repo.locations
     assert locations is not None
     assert isinstance(locations, pd.DataFrame)
     assert "IDName" in locations.columns.tolist()
     assert "Bor1" in locations["IDName"].tolist()
+
+
+@requires_DATAFARM_API_KEY()
+def test_time_series_insert_data(repo: DatafarmRepository):
+    assert hasattr(repo, "insert_data")
+    import pandas as pd
+
+    data = pd.DataFrame(
+        {
+            "TimeStamp": [
+                "2020-01-01T00:00:00Z",
+                pd.to_datetime("2020-01-01T00:00:00Z"),
+                pd.to_datetime("2020-01-01T12:00:00Z"),
+            ],
+            "QualityLevel": ["ok", "ok", "bad"],
+            "Data": [1.23, None, 3],
+        }
+    )
+
+    body = repo._get_insert_data_body(
+        time_series_id="test",
+        data=data,
+    )
+    assert body is not None
+    assert isinstance(body, dict)
+    assert body["Data"][0] == {"N": 0, "V": 1.23}
+    assert body["Data"][1] == {"N": 1, "V": 0}
+    assert "ObjectFileName" in body.keys()
+    assert body["ObjectFileName"] == []
+
+
+@requires_DATAFARM_API_KEY()
+def test_time_series_insert_data_file(repo: DatafarmRepository):
+    data = pd.DataFrame(
+        {
+            "TimeStamp": [
+                "2020-01-01T00:00:00Z",
+                pd.to_datetime("2020-01-01T00:00:00Z"),
+                pd.to_datetime("2020-01-01T12:00:00Z"),
+            ],
+            "QualityLevel": ["ok", "ok", "bad"],
+            "Data": [1.23, None, 3],
+            "FilePath": [
+                "tests/data/test_upload.txt",
+                "tests/data/test_upload.txt",
+                "tests/data/test_upload.txt",
+            ],
+        }
+    )
+    body = repo._get_insert_data_body(
+        time_series_id="test",
+        data=data,
+    )
+    assert body is not None
+    assert isinstance(body, dict)
+    assert body["ObjectFileName"] == [
+        "test_upload.txt",
+        "test_upload.txt",
+        "test_upload.txt",
+    ]
+    assert isinstance(body["ObjectBase64"][0], bytes)
+    assert body["ObjectBase64"] != b"Hello world"
+    assert base64.b64decode(body["ObjectBase64"][0]) == b"Hello world"
+
+
+@requires_DATAFARM_API_KEY()
+def test_format_and_validate(repo: DatafarmRepository):
+    assert hasattr(repo, "_format_and_validate")
+    import pandas as pd
+
+    data = pd.DataFrame(
+        {
+            "TimeStamp": [
+                "2020-01-01T00:00:00Z",
+                pd.to_datetime("2020-01-01T00:00:00Z"),
+                pd.to_datetime("2020-01-01T12:00:00Z"),
+            ],
+            "QualityLevel": ["ok", "ok", "bad"],
+            "Data": [1.23, None, 3],
+        }
+    )
+
+    insert_data = repo._format_and_validate(data)
+    assert insert_data is not None
+    assert isinstance(insert_data, pd.DataFrame)
+    assert insert_data["TimeStamp"][0] == "2020-01-01T00:00:00"
+    assert "ObjectFileName" in insert_data.columns
+    assert "ObjectBase64" in insert_data.columns

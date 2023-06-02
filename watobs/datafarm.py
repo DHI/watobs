@@ -1,10 +1,16 @@
+import base64
 import datetime
 import json
 from functools import cached_property
+import logging
+import os
+from typing import Dict, Optional, Union
+import numpy as np
 
 import pandas as pd
 import pandas.io.json as pj
 import requests
+import pandera as pa
 
 
 def to_pandas_df(json_input: str) -> pd.DataFrame:
@@ -69,6 +75,17 @@ class DatafarmRepository:
     """
 
     API_URL = "https://apidevtest.datafarm.work/api"
+
+    INSERT_SCHEMA = pa.DataFrameSchema(
+        {
+            "TimeStamp": pa.Column(str),
+            "QualityLevel": pa.Column(str),
+            "Confidence": pa.Column(pa.Int, nullable=True, required=False),
+            "Data": pa.Column(pa.Float, nullable=True, required=False),
+            "Duration": pa.Column(pa.Int, nullable=True, required=False),
+            "FilePath": pa.Column(pa.String, required=False),
+        }
+    )
 
     def __init__(self, api_key):
         self.api_key = api_key
@@ -146,6 +163,131 @@ class DatafarmRepository:
         data = response.json()[0]
 
         return to_pandas_df(json.dumps(data))
+
+    def insert_data(
+        self, time_series_id: str, data: pd.DataFrame, bulk_insert: bool = False
+    ):
+        """Insert data into a time series."""
+        body = self._get_insert_data_body(time_series_id, data, bulk_insert)
+        endpoint = "/TimeSeries/InsertData"
+        url = self.API_URL + endpoint
+        response = self.session.post(url, json=body, headers=self.headers)
+        response.raise_for_status()
+        return response.json()
+
+    def _get_insert_data_body(
+        self, time_series_id: str, data: pd.DataFrame, bulk_insert: bool = False
+    ):
+        """Insert data into a time series.
+
+        Parameters
+        ==========
+        time_series_id : str
+            The time series to insert data into.
+        data : pd.DataFrame
+            The data to insert.
+        bulk_insert : bool, optional
+            Whether to use bulk insert.
+            Defaults to False.
+        """
+
+        insert_data = self._format_and_validate(data)
+
+        to_list = lambda series: list(series) if series.iloc[0] is not None else []
+
+        insert_data_dict = {
+            col: to_list(insert_data[col]) for col in insert_data.columns
+        }
+        body = {
+            "BulkInsert": bulk_insert,
+            "TimeSeriesName": time_series_id,
+            **insert_data_dict,
+        }
+        return body
+
+    def _format_and_validate(self, data: pd.DataFrame):
+        insert_data = data.copy()
+
+        if data.empty:
+            raise ValueError("No data to insert")
+
+        columns_data = data.columns
+        columns_schema = self.INSERT_SCHEMA.columns.keys()
+        if not set(columns_data).issubset(set(columns_schema)):
+            raise ValueError(
+                f"Columns {set(columns_data) - set(columns_schema)} not allowed to insert."
+            )
+
+        if not "TimeStamp" in insert_data.columns:
+            raise KeyError("No 'TimeStamp' column in data")
+
+        try:
+            logging.info("Converting timestamp to ISO8601 format")
+            insert_data["TimeStamp"] = pd.to_datetime(insert_data["TimeStamp"]).apply(
+                lambda x: x.strftime("%Y-%m-%dT%H:%M:%S")
+            )
+        except ValueError:
+            raise ValueError("Invalid 'TimeStamp' column in data")
+
+        if insert_data["QualityLevel"].dtype == int:
+            logging.info("Converting quality levesl to quality name")
+            try:
+                insert_data["QualityLevel"].apply(
+                    self.quality_level_to_name, inplace=True
+                )
+            except KeyError:
+                raise KeyError(
+                    f"Invalid 'QualityLevel' values. Must be in {self.quality_level_to_name.keys()}"
+                )
+
+        self.INSERT_SCHEMA.validate(insert_data)
+
+        if "FilePath" in insert_data.columns:
+            logging.info("Converting file to base64")
+            insert_data["ObjectFileName"] = insert_data["FilePath"].apply(
+                lambda p: os.path.basename(p)
+            )
+            try:
+                insert_data["ObjectBase64"] = insert_data["FilePath"].apply(
+                    lambda p: base64.b64encode(open(p, "rb").read())
+                )
+            except FileNotFoundError as err:
+                raise FileNotFoundError(
+                    f"File {err.filename} not found. Please check the path."
+                )
+            del insert_data["FilePath"]
+        else:
+            insert_data["ObjectFileName"] = None
+            insert_data["ObjectBase64"] = None
+
+        if "Data" in insert_data.columns:
+            insert_data["Data"] = insert_data["Data"].apply(self._format_float)
+        else:
+            insert_data["Data"] = None
+
+        if "Confidence" in insert_data.columns:
+            insert_data["Confidence"] = insert_data["Confidence"].apply(
+                self._format_float
+            )
+        else:
+            insert_data["Confidence"] = None
+
+        if "Duration" in insert_data.columns:
+            insert_data["Duration"] = insert_data["Duration"].apply(self._format_float)
+        else:
+            insert_data["Duration"] = None
+
+        return insert_data
+
+    def _get_file_base64(self, file_paths):
+        file_exists = [os.path.exists(x) for x in file_paths]
+        if not all(file_exists):
+            raise ValueError(
+                f"File does not exist: {file_paths[~np.array(file_exists)]}"
+            )
+        file_base64 = [base64.b64encode(open(x, "rb").read()) for x in file_paths]
+        file_names = [os.path.basename(x) for x in file_paths]
+        return file_base64, file_names
 
     @cached_property
     def time_series_metadata(self):
@@ -231,6 +373,13 @@ class DatafarmRepository:
         r.raise_for_status()
         data = r.json()
         return to_pandas_df(json.dumps(data))
+
+    @staticmethod
+    def _format_float(x: Optional[float]) -> Dict[str, Union[int, float]]:
+        """Format a float for JSON serialization."""
+        if x is None or np.isnan(x):
+            return {"N": 1, "V": 0}
+        return {"N": 0, "V": x}
 
     def __enter__(self):
         self.connect()
