@@ -372,7 +372,7 @@ class DatafarmRepository:
     def _format_float(x: Optional[float]) -> Dict[str, Union[int, float]]:
         """Format a float for JSON serialization."""
         if x is None or np.isnan(x):
-            return {"N": 1, "V": 0}
+            return {"N": 1, "V": 0.0}
         return {"N": 0, "V": x}
 
     def __enter__(self):
