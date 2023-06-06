@@ -79,7 +79,7 @@ class DatafarmRepository:
     INSERT_SCHEMA = pa.DataFrameSchema(
         {
             "TimeStamp": pa.Column(str),
-            "QualityLevel": pa.Column(str),
+            "QualityLevel": pa.Column(int),
             "Confidence": pa.Column(pa.Int, nullable=True, required=False),
             "Data": pa.Column(pa.Float, nullable=True, required=False),
             "Duration": pa.Column(pa.Int, nullable=True, required=False),
@@ -223,15 +223,15 @@ class DatafarmRepository:
         except ValueError:
             raise ValueError("Invalid 'TimeStamp' column in data")
 
-        if insert_data["QualityLevel"].dtype == int:
-            logging.info("Converting quality levesl to quality name")
+        if insert_data["QualityLevel"].dtype in ("object", "string", "str"):
+            logging.info("Converting quality levels to quality name")
             try:
-                insert_data["QualityLevel"].apply(
-                    self.quality_level_to_name, inplace=True
+                insert_data["QualityLevel"] = insert_data["QualityLevel"].apply(
+                    lambda x: self.quality_name_to_level[x]
                 )
             except KeyError:
                 raise KeyError(
-                    f"Invalid 'QualityLevel' values. Must be in {self.quality_level_to_name.keys()}"
+                    f"Invalid 'QualityLevel' values. Must be in {self.quality_name_to_level.keys()}"
                 )
 
         self.INSERT_SCHEMA.validate(insert_data)
