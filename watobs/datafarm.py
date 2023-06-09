@@ -167,7 +167,7 @@ class DatafarmRepository:
         url = self.API_URL + endpoint
         response = self.session.post(url, json=body, headers=self.headers)
         response.raise_for_status()
-        return response.json()
+        return response
 
     def _get_insert_data_body(
         self, time_series_id: str, data: pd.DataFrame, bulk_insert: bool = False
@@ -185,13 +185,9 @@ class DatafarmRepository:
             Defaults to False.
         """
 
-        insert_data = self._format_and_validate(data)
+        insert_data = self._prepare_insert_data(data)
 
-        to_list = lambda series: list(series) if series.iloc[0] is not None else []
-
-        insert_data_dict = {
-            col: to_list(insert_data[col]) for col in insert_data.columns
-        }
+        insert_data_dict = {col: list(insert_data[col]) for col in insert_data.columns}
         body = {
             "BulkInsert": bulk_insert,
             "TimeSeriesName": time_series_id,
@@ -199,40 +195,55 @@ class DatafarmRepository:
         }
         return body
 
-    def _format_and_validate(self, data: pd.DataFrame):
+    def _prepare_insert_data(self, data: pd.DataFrame):
+        """Prepare data for insertion. This includes converting the timestamp to ISO8601 format,
+        converting the quality level to an integer, and checking that the data is valid.
+        """
         insert_data = data.copy()
 
         if data.empty:
             raise ValueError("No data to insert")
 
-        columns_data = data.columns
-        columns_schema = self.INSERT_SCHEMA.columns.keys()
-        if not set(columns_data).issubset(set(columns_schema)):
-            raise ValueError(
-                f"Columns {set(columns_data) - set(columns_schema)} not allowed to insert."
-            )
-
-        if not "TimeStamp" in insert_data.columns:
-            raise KeyError("No 'TimeStamp' column in data")
-
         try:
-            logging.info("Converting timestamp to ISO8601 format")
-            insert_data["TimeStamp"] = pd.to_datetime(insert_data["TimeStamp"]).apply(
-                lambda x: x.strftime("%Y-%m-%dT%H:%M:%S")
+            quality_column = next(
+                col
+                for col in insert_data.columns
+                if col in ("Quality", "QualityLevel", "QualityTxt")
             )
-        except ValueError:
-            raise ValueError("Invalid 'TimeStamp' column in data")
+        except StopIteration:
+            raise ValueError("No quality column in data")
 
-        if insert_data["QualityLevel"].dtype in ("object", "string", "str"):
-            logging.info("Converting quality levels to quality name")
+        if insert_data[quality_column].dtype in ("object", "string", "str"):
+            logging.info("Converting quality names to quality level")
             try:
-                insert_data["QualityLevel"] = insert_data["QualityLevel"].apply(
+                insert_data[quality_column] = insert_data[quality_column].apply(
                     lambda x: self.quality_name_to_level[x]
                 )
             except KeyError:
                 raise KeyError(
-                    f"Invalid 'QualityLevel' values. Must be in {self.quality_name_to_level.keys()}"
+                    f"Invalid quality string values. Must be in {self.quality_name_to_level.keys()} or an integer."
                 )
+        else:
+            insert_data[quality_column] = insert_data[quality_column].astype(int)
+
+        insert_data.rename(columns={quality_column: "QualityLevel"}, inplace=True)
+
+        columns_schema = self.INSERT_SCHEMA.columns.keys()
+        if not set(insert_data.columns).issubset(set(columns_schema)):
+            logging.warning(
+                f"Columns {set(insert_data.columns) - set(columns_schema)} not allowed to insert."
+            )
+
+        try:
+            logging.info("Ensuring timestamps are in ISO8601 format")
+            insert_data["TimeStamp"] = pd.to_datetime(insert_data["TimeStamp"]).apply(
+                lambda x: str(x.strftime("%Y-%m-%dT%H:%M:%S.%f"))[:-3]
+                # _parse_datetime
+            )
+        except KeyError:
+            raise KeyError("No 'TimeStamp' column in data")
+        except ValueError:
+            raise ValueError("Invalid 'TimeStamp' column in data")
 
         self.INSERT_SCHEMA.validate(insert_data)
 
@@ -250,26 +261,17 @@ class DatafarmRepository:
                     f"File {err.filename} not found. Please check the path."
                 )
             del insert_data["FilePath"]
-        else:
-            insert_data["ObjectFileName"] = None
-            insert_data["ObjectBase64"] = None
 
         if "Data" in insert_data.columns:
             insert_data["Data"] = insert_data["Data"].apply(self._format_float)
-        else:
-            insert_data["Data"] = None
 
         if "Confidence" in insert_data.columns:
             insert_data["Confidence"] = insert_data["Confidence"].apply(
                 self._format_float
             )
-        else:
-            insert_data["Confidence"] = None
 
         if "Duration" in insert_data.columns:
             insert_data["Duration"] = insert_data["Duration"].apply(self._format_float)
-        else:
-            insert_data["Duration"] = None
 
         return insert_data
 

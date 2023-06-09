@@ -258,7 +258,7 @@ def test_time_series_insert_data(repo: DatafarmRepository):
                 pd.to_datetime("2020-01-01T00:00:00Z"),
                 pd.to_datetime("2020-01-01T12:00:00Z"),
             ],
-            "QualityLevel": ["ok", "ok", "bad"],
+            "QualityTxt": ["ok", "ok", "critical"],
             "Data": [1.23, None, 3],
         }
     )
@@ -271,8 +271,6 @@ def test_time_series_insert_data(repo: DatafarmRepository):
     assert isinstance(body, dict)
     assert body["Data"][0] == {"N": 0, "V": 1.23}
     assert body["Data"][1] == {"N": 1, "V": 0}
-    assert "ObjectFileName" in body.keys()
-    assert body["ObjectFileName"] == []
 
 
 @requires_DATAFARM_API_KEY()
@@ -284,7 +282,7 @@ def test_time_series_insert_data_file(repo: DatafarmRepository):
                 pd.to_datetime("2020-01-01T00:00:00Z"),
                 pd.to_datetime("2020-01-01T12:00:00Z"),
             ],
-            "QualityLevel": ["ok", "ok", "bad"],
+            "QualityTxt": ["ok", "ok", "critical"],
             "Data": [1.23, None, 3],
             "FilePath": [
                 "tests/data/test_upload.txt",
@@ -310,25 +308,31 @@ def test_time_series_insert_data_file(repo: DatafarmRepository):
 
 
 @requires_DATAFARM_API_KEY()
-def test_format_and_validate(repo: DatafarmRepository):
-    assert hasattr(repo, "_format_and_validate")
-    import pandas as pd
+def test_insert_data(repo):
+    import random
 
+    random_date = lambda: pd.Timestamp.now() - pd.Timedelta(
+        days=3000 + random.randint(1, 1000)
+    )
+    rows = 2
     data = pd.DataFrame(
         {
-            "TimeStamp": [
-                "2020-01-01T00:00:00Z",
-                pd.to_datetime("2020-01-01T00:00:00Z"),
-                pd.to_datetime("2020-01-01T12:00:00Z"),
-            ],
-            "QualityLevel": ["ok", "ok", "bad"],
-            "Data": [1.23, None, 3],
+            "TimeStamp": [random_date() for _ in range(rows)],
+            "Data": [random.random() for _ in range(rows)],
+            "Quality": ["ok"] * rows,
         }
     )
+    data
+    response = repo.insert_data("testapi.insert", data, bulk_insert=True)
+    assert response is not None
+    assert response.status_code == 200
+    assert response.request.method == "POST"
+    body = json.loads(response.request.body)
+    assert body["TimeSeriesName"] == "testapi.insert"
+    assert body["Data"][0]["N"] == 0
+    assert body["QualityLevel"][0] == 0
 
-    insert_data = repo._format_and_validate(data)
-    assert insert_data is not None
-    assert isinstance(insert_data, pd.DataFrame)
-    assert insert_data["TimeStamp"][0] == "2020-01-01T00:00:00"
-    assert "ObjectFileName" in insert_data.columns
-    assert "ObjectBase64" in insert_data.columns
+
+@requires_DATAFARM_API_KEY()
+def test_time_series_delete_data(repo: DatafarmRepository):
+    assert hasattr(repo, "delete_data")
