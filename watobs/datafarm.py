@@ -4,7 +4,7 @@ import json
 from functools import cached_property
 import logging
 import os
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Union
 import numpy as np
 
 import pandas as pd
@@ -339,6 +339,25 @@ class DatafarmRepository:
         response = self.session.post(url, json=body, headers=self.headers)
         response.raise_for_status()
         return response
+
+    def get_statistics(self, time_series_id: Union[str, List[str]]) -> pd.DataFrame:
+        """Get statistics for a time series or a list of time series.
+
+        Parameters
+        ==========
+        time_series_id : str or list of str
+            The time series to get statistics for.
+        """
+        endpoint = "/TimeSeries/Statistics"
+        url = self.API_URL + endpoint
+        if isinstance(time_series_id, str):
+            time_series_id = [time_series_id]
+        body = {"TimeSeries": list(time_series_id), "ISO8601_Timestamp": True}
+        response = self.session.post(url, json=body, headers=self.headers)
+        response.raise_for_status()
+        data = response.json()
+
+        return to_pandas_df(json.dumps(data))
 
     def _get_file_base64(self, file_paths):
         file_exists = [os.path.exists(x) for x in file_paths]
