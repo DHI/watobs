@@ -1,7 +1,7 @@
 import base64
 import datetime
 import json
-from functools import cached_property
+from functools import cached_property, wraps
 import logging
 import os
 from typing import Dict, List, Optional, Union
@@ -54,6 +54,24 @@ def _parse_datetime(dt: str) -> str:
     return datetime_obj.isoformat() + "Z"
 
 
+def ensure_auth(func):
+    """(Re)authenticate if access token is expired / not set"""
+
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        try:
+            return func(self, *args, **kwargs)
+        except requests.HTTPError as e:
+            if e.response.status_code == 401:
+                logging.warning("Unauthorized. Reconnecting...")
+                self.connect()
+                return func(self, *args, **kwargs)
+            else:
+                raise e
+
+    return wrapper
+
+
 class DatafarmRepository:
     """Get timeseries data from Datafarm
 
@@ -93,6 +111,7 @@ class DatafarmRepository:
         self.access_token = None
         self.headers = None
 
+    @ensure_auth
     def list_time_series(self) -> pd.DataFrame:
         url = self.API_URL + "/List/TimeSeries/"
         response = requests.get(url, headers=self.headers)
@@ -101,6 +120,7 @@ class DatafarmRepository:
 
         return to_pandas_df(json.dumps(data))
 
+    @ensure_auth
     def get_data(
         self,
         time_series_id,
@@ -158,6 +178,7 @@ class DatafarmRepository:
 
         return to_pandas_df(json.dumps(data))
 
+    @ensure_auth
     def insert_data(
         self, time_series_id: str, data: pd.DataFrame, bulk_insert: bool = False
     ):
@@ -272,6 +293,7 @@ class DatafarmRepository:
 
         return insert_data
 
+    @ensure_auth
     def delete_data(self, time_series_id, timestamps=None, start=None, end=None):
         """Delete data from a time series. Either timestamps or start and end must be provided.
 
@@ -340,6 +362,7 @@ class DatafarmRepository:
         response.raise_for_status()
         return response
 
+    @ensure_auth
     def get_statistics(self, time_series_id: Union[str, List[str]]) -> pd.DataFrame:
         """Get statistics for a time series or a list of time series.
 
@@ -370,57 +393,68 @@ class DatafarmRepository:
         return file_base64, file_names
 
     @cached_property
+    @ensure_auth
     def time_series_metadata(self):
         endpoint = "/MetaData/Entity"
         params = {"aClassId": "Timeseries"}
         return self._get_pandas_df(endpoint, params)
 
     @cached_property
+    @ensure_auth
     def time_series_source_descriptions(self):
         endpoint = "/List/TimeSeriesSourceDescriptions"
         return self._get_pandas_df(endpoint)
 
     @cached_property
+    @ensure_auth
     def units(self):
         endpoint = "/List/Units"
         return self._get_pandas_df(endpoint)
 
     @cached_property
+    @ensure_auth
     def time_series_types(self):
         endpoint = "/List/TimeSeriesTypes"
         return self._get_pandas_df(endpoint)
 
     @cached_property
+    @ensure_auth
     def time_series_status(self):
         endpoint = "/List/TimeSeriesStatus"
         return self._get_pandas_df(endpoint)
 
     @cached_property
+    @ensure_auth
     def qualities(self):
         endpoint = "/List/Qualities"
         return self._get_pandas_df(endpoint)
 
     @cached_property
+    @ensure_auth
     def parameters(self):
         endpoint = "/List/Parameters"
         return self._get_pandas_df(endpoint)
 
     @cached_property
+    @ensure_auth
     def medias(self):
         endpoint = "/List/Medias"
         return self._get_pandas_df(endpoint)
 
     @cached_property
+    @ensure_auth
     def locations(self):
         endpoint = "/List/Locations"
         return self._get_pandas_df(endpoint)
 
     @cached_property
+    @ensure_auth
     def quality_level_to_name(self):
         df = self.qualities
         return {df["Level"].iloc[i]: df["IDName"].iloc[i] for i in range(len(df))}
 
     @cached_property
+    @ensure_auth
     def quality_name_to_level(self):
         df = self.qualities
         return {df["IDName"].iloc[i]: df["Level"].iloc[i] for i in range(len(df))}
