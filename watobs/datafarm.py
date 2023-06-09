@@ -236,10 +236,7 @@ class DatafarmRepository:
 
         try:
             logging.info("Ensuring timestamps are in ISO8601 format")
-            insert_data["TimeStamp"] = pd.to_datetime(insert_data["TimeStamp"]).apply(
-                lambda x: str(x.strftime("%Y-%m-%dT%H:%M:%S.%f"))[:-3]
-                # _parse_datetime
-            )
+            insert_data["TimeStamp"] = insert_data["TimeStamp"].apply(_parse_datetime)
         except KeyError:
             raise KeyError("No 'TimeStamp' column in data")
         except ValueError:
@@ -274,6 +271,74 @@ class DatafarmRepository:
             insert_data["Duration"] = insert_data["Duration"].apply(self._format_float)
 
         return insert_data
+
+    def delete_data(self, time_series_id, timestamps=None, start=None, end=None):
+        """Delete data from a time series. Either timestamps or start and end must be provided.
+
+        Parameters
+        ----------
+        time_series_id : str
+            The time series to delete data from.
+        timestamps : list of str | datetime.datetime objects, optional
+            The timestamps to delete.
+        start : str | datetime.datetime, optional
+            The start of the range to delete data from.
+        end : str | datetime.datetime, optional
+            The end of the range to delete data from.
+            Note that this is NOT inclusive.
+        """
+        if timestamps is None and (start is None or end is None):
+            raise ValueError("Either timestamps or start and end must be provided.")
+        if timestamps is not None and (start is not None or end is not None):
+            raise ValueError("Either timestamps or start and end must be provided.")
+        if timestamps is not None:
+            return self._delete_data_timestamps(time_series_id, timestamps)
+
+        return self._delete_data_range(time_series_id, start, end)
+
+    def _delete_data_timestamps(self, time_series_id, timestamps):
+        """Delete data from a time series by timestamps.
+
+        Parameters
+        ----------
+        time_series_id : str
+            The time series to delete data from.
+        timestamps : list of str | datetime.datetime objects
+            The timestamps to delete.
+        """
+        endpoint = "/TimeSeries/DeleteData"
+        url = self.API_URL + endpoint
+        body = {
+            "TimeSeriesName": time_series_id,
+            "TimeStamp": [_parse_datetime(ts) for ts in timestamps],
+        }
+        response = self.session.post(url, json=body, headers=self.headers)
+        response.raise_for_status()
+        return response
+
+    def _delete_data_range(self, time_series_id, start, end):
+        """Delete data from a time series by range [start, end).
+
+        Parameters
+        ----------
+        time_series_id : str
+            The time series to delete data from.
+        start : str | datetime.datetime
+            The start of the range to delete data from.
+        end : str | datetime.datetime
+            The end of the range to delete data from.
+            Note that this is NOT inclusive.
+        """
+        endpoint = "/TimeSeries/DeleteDataRange"
+        url = self.API_URL + endpoint
+        body = {
+            "TimeSeriesName": time_series_id,
+            "RangeStart": _parse_datetime(start),
+            "RangeFinish": _parse_datetime(end),
+        }
+        response = self.session.post(url, json=body, headers=self.headers)
+        response.raise_for_status()
+        return response
 
     def _get_file_base64(self, file_paths):
         file_exists = [os.path.exists(x) for x in file_paths]
