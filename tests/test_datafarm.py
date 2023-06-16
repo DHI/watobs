@@ -148,7 +148,7 @@ def test_to_dataframe_error():
 def test_parse_datetime_valid():
     dt = "2023-05-15T14:30:00"
     result = _parse_datetime(dt)
-    expected = "2023-05-15T14:30:00Z"
+    expected = "2023-05-15T14:30:00.000Z"
     assert result == expected
 
 
@@ -161,14 +161,14 @@ def test_parse_datetime_invalid():
 def test_parse_datetime_other_formate():
     dt = "05/15/2023 14:30:00"
     result = _parse_datetime(dt)
-    expected = "2023-05-15T14:30:00Z"
+    expected = "2023-05-15T14:30:00.000Z"
     assert result == expected
 
 
 def test_parse_datetime_object():
     dt = datetime.datetime(2023, 5, 15, 14, 30, 0)
     result = _parse_datetime(dt)
-    expected = "2023-05-15T14:30:00Z"
+    expected = "2023-05-15T14:30:00.000Z"
     assert result == expected
 
 
@@ -336,3 +336,21 @@ def test_insert_data(repo):
 @requires_DATAFARM_API_KEY()
 def test_time_series_delete_data(repo: DatafarmRepository):
     assert hasattr(repo, "delete_data")
+
+    timestamp = pd.Timestamp("2100-01-01T00:00:00Z")
+    delta = pd.Timedelta(microseconds=1)
+
+    data = pd.DataFrame(
+        {
+            "TimeStamp": [timestamp],
+            "Data": [1],
+            "Quality": ["ok"],
+        }
+    )
+    repo.insert_data("testapi.insert", data, bulk_insert=True)
+    res = repo.get_data("testapi.insert", start=timestamp, end=timestamp + delta)
+    assert len(res) == 1
+
+    repo.delete_data("testapi.insert", timestamps=[timestamp])
+    res = repo.get_data("testapi.insert", start=timestamp, end=timestamp + delta)
+    assert len(res) == 0
