@@ -354,3 +354,30 @@ def test_time_series_delete_data(repo: DatafarmRepository):
     repo.delete_data("testapi.insert", timestamps=[timestamp])
     res = repo.get_data("testapi.insert", start=timestamp, end=timestamp + delta)
     assert len(res) == 0
+
+
+@requires_DATAFARM_API_KEY()
+def test_time_series_update_data_quality(repo: DatafarmRepository):
+    assert hasattr(repo, "update_data_quality")
+
+    timestamp = pd.Timestamp("2100-01-01T00:00:00Z")
+    delta = pd.Timedelta(microseconds=1)
+
+    data = pd.DataFrame(
+        {
+            "TimeStamp": [timestamp],
+            "Data": [1],
+            "Quality": ["ok"],
+        }
+    )
+    repo.insert_data("testapi.insert", data, bulk_insert=True)
+    res = repo.get_data("testapi.insert", start=timestamp, end=timestamp + delta)
+    assert len(res) == 1
+    assert res["QualityTxt"][0] == "ok"
+
+    repo.update_data_quality(
+        "testapi.insert", timestamps=[timestamp], quality="critical"
+    )
+    res = repo.get_data("testapi.insert", start=timestamp, end=timestamp + delta)
+    assert len(res) == 1
+    assert res["QualityTxt"][0] == "critical"

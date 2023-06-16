@@ -7,6 +7,7 @@ import os
 from typing import Dict, List, Optional, Union
 import numpy as np
 
+
 import pandas as pd
 import pandas.io.json as pj
 import requests
@@ -360,6 +361,46 @@ class DatafarmRepository:
             "TimeSeriesName": time_series_id,
             "RangeStart": _parse_datetime(start),
             "RangeFinish": _parse_datetime(end),
+        }
+        response = self.session.post(url, json=body, headers=self.headers)
+        response.raise_for_status()
+        return response
+
+    def update_data_quality(self, time_series_id: str, timestamps, quality):
+        """Update the quality of data in a time series.
+
+        Parameters
+        ----------
+        time_series_id : str
+            The time series to update.
+        timestamps : list of str or list of datetime.datetime
+            The timestamps to update.
+        quality : int or str or list of int or list of str
+            The qualities to set.
+        """
+        if not isinstance(quality, list):
+            quality = [quality] * len(timestamps)
+        if not len(timestamps) == len(quality):
+            raise ValueError("The number of timestamps and qualities must be the same.")
+
+        if type(quality[0]) == str:
+            try:
+                new_qualities = [int(self.quality_name_to_level[q]) for q in quality]
+            except KeyError:
+                raise ValueError(
+                    "Quality must be one of: {}".format(
+                        ", ".join(self.quality_name_to_level.keys())
+                    )
+                )
+        else:
+            new_qualities = quality
+
+        endpoint = "/TimeSeries/UpdateDataQuality"
+        url = self.API_URL + endpoint
+        body = {
+            "TimeSeriesName": time_series_id,
+            "TimeStamp": [_parse_datetime(ts) for ts in timestamps],
+            "QualityLevel": new_qualities,
         }
         response = self.session.post(url, json=body, headers=self.headers)
         response.raise_for_status()
