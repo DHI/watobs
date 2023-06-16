@@ -51,7 +51,7 @@ def to_pandas_df(json_input: str) -> pd.DataFrame:
 def _parse_datetime(dt: str) -> str:
     """Return a datetime string in ISO8601 format: E.g. 2015-03-24T10:16:45.034Z"""
     datetime_obj = pd.to_datetime(dt)
-    return datetime_obj.isoformat() + "Z"
+    return datetime_obj.isoformat(timespec="milliseconds") + "Z"
 
 
 def ensure_auth(func):
@@ -249,6 +249,8 @@ class DatafarmRepository:
             insert_data[quality_column] = insert_data[quality_column].astype(int)
 
         insert_data.rename(columns={quality_column: "QualityLevel"}, inplace=True)
+
+        insert_data["Data"] = insert_data["Data"].astype(float)
 
         columns_schema = self.INSERT_SCHEMA.columns.keys()
         if not set(insert_data.columns).issubset(set(columns_schema)):
@@ -470,7 +472,7 @@ class DatafarmRepository:
             self.access_token = response.headers["Access-Token"]
         except KeyError:
             raise KeyError(
-                f"resopnse.json() = {response.json()} Could not get access token. Check that your API key is correct."
+                f"Could not get access token. Check that your API key is correct."
             )
         self.headers = {"Access-Token": self.access_token}
         self._connected = True
