@@ -62,8 +62,8 @@ def ensure_auth(func):
         try:
             return func(self, *args, **kwargs)
         except requests.HTTPError as e:
-            if e.response.status_code == 401:
-                logging.warning("Unauthorized. Reconnecting...")
+            if e.response.status_code == 401 and self._connected:
+                logging.info("Session expired. Reconnecting...")
                 self.connect()
                 return func(self, *args, **kwargs)
             else:
@@ -110,6 +110,7 @@ class DatafarmRepository:
         self.session = requests.Session()
         self.access_token = None
         self.headers = None
+        self._connected = False
 
     @ensure_auth
     def list_time_series(self) -> pd.DataFrame:
@@ -472,6 +473,7 @@ class DatafarmRepository:
                 f"resopnse.json() = {response.json()} Could not get access token. Check that your API key is correct."
             )
         self.headers = {"Access-Token": self.access_token}
+        self._connected = True
 
     def close(self):
         """Close the connection to the Datafarm API."""
@@ -480,6 +482,7 @@ class DatafarmRepository:
         response.raise_for_status()
         self.access_token = None
         self.headers = None
+        self._connected = False
 
     def _get_pandas_df(self, endpoint, params=None):
         url = self.API_URL + endpoint
