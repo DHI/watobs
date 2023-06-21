@@ -6,6 +6,7 @@ import json
 import logging
 import os
 from functools import cached_property, wraps
+from typing import Any, Dict, List, Optional, Union
 
 
 import numpy as np
@@ -14,7 +15,7 @@ import pandas.io.json as pj
 import pandera as pa
 import requests
 
-DateTime = str | datetime.datetime
+DateTime = Union[str, datetime.datetime]
 
 
 def to_pandas_df(json_input: str) -> pd.DataFrame:
@@ -128,11 +129,11 @@ class DatafarmRepository:
     @ensure_auth
     def get_data(
         self,
-        time_series_id: str | list[str],
+        time_series_id: Union[str, List[str]],
         start: DateTime = datetime.datetime(1900, 1, 1, 0, 0, 0, 0),
         end: DateTime = datetime.datetime.now(),
-        fields: list[str] | None = None,
-        qualities: list[str] | None = None,
+        fields: Optional[List[str]] = None,
+        qualities: Optional[List[str]] = None,
         limit: int = 0,
         ascending: bool = True,
     ) -> pd.DataFrame:
@@ -197,7 +198,7 @@ class DatafarmRepository:
 
     def _get_insert_data_body(
         self, time_series_id: str, data: pd.DataFrame, bulk_insert: bool = False
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """Insert data into a time series.
 
         Parameters
@@ -304,9 +305,9 @@ class DatafarmRepository:
     def delete_data(
         self,
         time_series_id: str,
-        timestamps: list[DateTime] | None = None,
-        start: DateTime | None = None,
-        end: DateTime | None = None,
+        timestamps: Optional[List[DateTime]] = None,
+        start: Optional[DateTime] = None,
+        end: Optional[DateTime] = None,
     ) -> requests.Response:
         """Delete data from a time series. Either timestamps or start and end must be provided.
 
@@ -332,7 +333,7 @@ class DatafarmRepository:
         return self._delete_data_range(time_series_id, start, end)
 
     def _delete_data_timestamps(
-        self, time_series_id: str, timestamps: list[DateTime]
+        self, time_series_id: str, timestamps: List[DateTime]
     ) -> requests.Response:
         """Delete data from a time series by timestamps.
 
@@ -382,8 +383,8 @@ class DatafarmRepository:
     def update_data_quality(
         self,
         time_series_id: str,
-        timestamps: list[DateTime],
-        quality: int | str | list[int] | list[str],
+        timestamps: List[DateTime],
+        quality: Union[int, str, List[int], List[str]],
     ) -> requests.Response:
         """Update the quality of data in a time series.
 
@@ -425,7 +426,7 @@ class DatafarmRepository:
         return response
 
     @ensure_auth
-    def get_statistics(self, time_series_id: str | list[str]) -> pd.DataFrame:
+    def get_statistics(self, time_series_id: Union[str, List[str]]) -> pd.DataFrame:
         """Get statistics for a time series or a list of time series.
 
         Parameters
@@ -501,13 +502,13 @@ class DatafarmRepository:
 
     @cached_property
     @ensure_auth
-    def quality_level_to_name(self) -> dict[int, str]:
+    def quality_level_to_name(self) -> Dict[int, str]:
         df = self.qualities
         return {df["Level"].iloc[i]: df["IDName"].iloc[i] for i in range(len(df))}
 
     @cached_property
     @ensure_auth
-    def quality_name_to_level(self) -> dict[str, int]:
+    def quality_name_to_level(self) -> Dict[str, int]:
         df = self.qualities
         return {df["IDName"].iloc[i]: df["Level"].iloc[i] for i in range(len(df))}
 
@@ -535,7 +536,9 @@ class DatafarmRepository:
         self.headers = None
         self._connected = False
 
-    def _get_pandas_df(self, endpoint: str, params: dict | None = None) -> pd.DataFrame:
+    def _get_pandas_df(
+        self, endpoint: str, params: Optional[Dict[str, Any]] = None
+    ) -> pd.DataFrame:
         url = self.API_URL + endpoint
         r = requests.get(url, headers=self.headers, params=params)
         r.raise_for_status()
@@ -543,7 +546,7 @@ class DatafarmRepository:
         return to_pandas_df(json.dumps(data))
 
     @staticmethod
-    def _format_float(x: float | None) -> dict[str, float]:
+    def _format_float(x: Optional[float]) -> Dict[str, float]:
         """Format a float for JSON serialization."""
         if x is None or np.isnan(x):
             return {"N": 1, "V": 0.0}
