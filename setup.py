@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="watobs",
     version="0.2.dev2",
-    install_requires=["numpy", "pandas", "requests", "matplotlib"],
+    install_requires=["numpy", "pandas", "requests", "matplotlib", "pandera"],
     extras_require={
         "dev": [
             "pytest",
