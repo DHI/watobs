@@ -79,7 +79,7 @@ class AltimetryData:
             if 1 is given as argument data with flag 0 and 1 will be written to
             file, by default 0 (i.e. only good data)
         """
-        from mikeio import Dfs0, eum
+        from mikeio import eum
 
         df = self.df
         if satellite is not None:
@@ -118,7 +118,8 @@ class AltimetryData:
         """
         df = self.df
 
-        plt.style.use("seaborn-whitegrid")
+        if "seaborn-whitegrid" in plt.style.available:
+            plt.style.use("seaborn-whitegrid")
         plt.figure(figsize=fig_size)
         markers = ["o", "x", "+", "v", "^", "<", ">", "s", "d", ",", "."]
         j = 0
@@ -336,8 +337,8 @@ class DHIAltimetryRepository:
         r.raise_for_status()
         stats = r.json()["stats"]
         df = pd.DataFrame(stats).set_index("short_name")
-        df["min_date"] = pd.to_datetime(df["min_date"])
-        df["max_date"] = pd.to_datetime(df["max_date"])
+        df["min_date"] = pd.to_datetime(df["min_date"], format="ISO8601")
+        df["max_date"] = pd.to_datetime(df["max_date"], format="ISO8601")
         return df
 
     def plot_observation_stats(self):
@@ -415,7 +416,7 @@ class DHIAltimetryRepository:
         r.raise_for_status()
         data = r.json()
         df = pd.DataFrame(data["temporal_coverage"])
-        df["date"] = pd.to_datetime(df["date"])
+        df["date"] = pd.to_datetime(df["date"], format="ISO8601")
         return df.set_index("date")
 
     def get_spatial_coverage(
@@ -467,7 +468,7 @@ class DHIAltimetryRepository:
         start_time="20200101",
         end_time=None,
         satellites="",
-        quality_filter="",
+        qual_filters=None,
     ):
         """Main function that retrieves altimetry data from api
 
@@ -486,8 +487,9 @@ class DHIAltimetryRepository:
             End of data to be retrieved, by default datetime.now()
         satellites : str, list of str, optional
             Satellites to be downloaded, e.g. '', '3a', 'j3, by default ''
-        quality_filter : str, optional
-            Name of quality filter, e.g. 'dhi_combined', by default '' meaning no filter
+        qual_filters : int, list[int], optional
+            Accepted qualities 0=god, 1=acceptable, 2=bad, e.g. [0, 1], 
+            by default None meaning no filter (=all data)
 
         Examples
         --------
@@ -506,7 +508,7 @@ class DHIAltimetryRepository:
             area=area,
             start_time=start_time,
             end_time=end_time,
-            quality_filter=quality_filter,
+            qual_filters=qual_filters,
             satellites=satellites,
         )
         df = self.get_altimetry_data_raw(payload)
@@ -562,10 +564,10 @@ class DHIAltimetryRepository:
     #         given, data until the last time available is returned. Default: "20200101".
     # nan_value : str, optional
     #     Value to use to indicate bad or missing data, or an empty string to use the default (-9999). Default: ''.
-    # quality_filter : str, optional
-    #     Type of filter to apply before returning data. Currently, only the value 'dhi_combined' is allowed. If the
-    #         empty string is given, no filter is applied. Default: 'dhi_combined'.
-    # numeric : bool, optional
+    # qual_filters : int, list[int], optional
+    #         Accepted qualities 0=god, 1=acceptable, 2=bad, e.g. [0, 1], 
+    #         by default None meaning no filter (=all data)
+    # # numeric : bool, optional
     #     If True, return columns as numeric and return fewer columns in order to comply with the Met-Ocean on Demand
     #         analysis systems. If False, all columns are returned, and string types are preserved as such.
     #         Default: False.
@@ -577,14 +579,16 @@ class DHIAltimetryRepository:
         end_time=None,
         satellites="3a",
         nan_value=None,
-        quality_filter=None,
+        qual_filters=None,
         numeric=False,
     ) -> dict:
         d = self._area_time_sat_payload(area, start_time, end_time, satellites)
         if nan_value:
             d["nodata"] = nan_value
-        if quality_filter:
-            d["qual_filters"] = quality_filter
+        if qual_filters is not None:
+            qual_filters = qual_filters if hasattr(qual_filters, "__len__") else [qual_filters] 
+            if len(qual_filters) > 0:
+                d["qual_filters"] = str(qual_filters).strip("[] ").replace(" ", "")
         if numeric:
             d["numeric"] = numeric
         return d
@@ -635,31 +639,7 @@ class DHIAltimetryRepository:
         if date is None:
             return None
 
-        return pd.to_datetime(date)
-
-    @staticmethod
-    def _validate_quality_filter(qa):
-        """is the quality filter string allowed by the altimetry api
-
-        Arguments:
-            qa -- allowed strings: '', 'qual_swh', 'qual_wind', 'qual_combined'
-
-        Returns:
-            qa -- the accepted string
-        """
-        if qa == "nofilter":
-            return ""
-        elif (
-            (qa == "")
-            | (qa == "dhi_combined")
-            | (qa == "qual_swh")
-            | (qa == "qual_wind_speed")
-        ):
-            return qa
-        else:
-            raise Exception(
-                f"Filter {qa} is unknown (dhi_combined, qual_swh, qual_wind_speed)"
-            )
+        return pd.to_datetime(date, format="ISO8601")
 
     def get_altimetry_data_raw(self, payload: dict) -> pd.DataFrame:
         """Request data from altimetry api
