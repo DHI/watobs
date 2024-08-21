@@ -468,7 +468,7 @@ class DHIAltimetryRepository:
         start_time="20200101",
         end_time=None,
         satellites="",
-        quality_filter="",
+        quality_filter=None,
     ):
         """Main function that retrieves altimetry data from api
 
@@ -487,8 +487,9 @@ class DHIAltimetryRepository:
             End of data to be retrieved, by default datetime.now()
         satellites : str, list of str, optional
             Satellites to be downloaded, e.g. '', '3a', 'j3, by default ''
-        quality_filter : str, optional
-            Name of quality filter, e.g. 'dhi_combined', by default '' meaning no filter
+        quality_filter : int, list[int], optional
+            Accepted qualities 0=god, 1=acceptable, 2=bad, e.g. [0, 1], 
+            by default None meaning no filter (=all data)
 
         Examples
         --------
@@ -563,10 +564,10 @@ class DHIAltimetryRepository:
     #         given, data until the last time available is returned. Default: "20200101".
     # nan_value : str, optional
     #     Value to use to indicate bad or missing data, or an empty string to use the default (-9999). Default: ''.
-    # quality_filter : str, optional
-    #     Type of filter to apply before returning data. Currently, only the value 'dhi_combined' is allowed. If the
-    #         empty string is given, no filter is applied. Default: 'dhi_combined'.
-    # numeric : bool, optional
+    # quality_filter : int, list[int], optional
+    #         Accepted qualities 0=god, 1=acceptable, 2=bad, e.g. [0, 1], 
+    #         by default None meaning no filter (=all data)
+    # # numeric : bool, optional
     #     If True, return columns as numeric and return fewer columns in order to comply with the Met-Ocean on Demand
     #         analysis systems. If False, all columns are returned, and string types are preserved as such.
     #         Default: False.
@@ -584,8 +585,10 @@ class DHIAltimetryRepository:
         d = self._area_time_sat_payload(area, start_time, end_time, satellites)
         if nan_value:
             d["nodata"] = nan_value
-        if quality_filter:
-            d["qual_filters"] = quality_filter
+        if quality_filter is not None:
+            quality_filter = quality_filter if hasattr(quality_filter, "__len__") else [quality_filter] 
+            if len(quality_filter) > 0:
+                d["qual_filters"] = str(quality_filter).strip("[] ").replace(" ", "")
         if numeric:
             d["numeric"] = numeric
         return d
