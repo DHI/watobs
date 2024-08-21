@@ -118,7 +118,8 @@ class AltimetryData:
         """
         df = self.df
 
-        plt.style.use("seaborn-whitegrid")
+        if "seaborn-whitegrid" in plt.style.available:
+            plt.style.use("seaborn-whitegrid")
         plt.figure(figsize=fig_size)
         markers = ["o", "x", "+", "v", "^", "<", ">", "s", "d", ",", "."]
         j = 0
@@ -336,8 +337,8 @@ class DHIAltimetryRepository:
         r.raise_for_status()
         stats = r.json()["stats"]
         df = pd.DataFrame(stats).set_index("short_name")
-        df["min_date"] = pd.to_datetime(df["min_date"])
-        df["max_date"] = pd.to_datetime(df["max_date"])
+        df["min_date"] = pd.to_datetime(df["min_date"], format="ISO8601")
+        df["max_date"] = pd.to_datetime(df["max_date"], format="ISO8601")
         return df
 
     def plot_observation_stats(self):
@@ -415,7 +416,7 @@ class DHIAltimetryRepository:
         r.raise_for_status()
         data = r.json()
         df = pd.DataFrame(data["temporal_coverage"])
-        df["date"] = pd.to_datetime(df["date"])
+        df["date"] = pd.to_datetime(df["date"], format="ISO8601")
         return df.set_index("date")
 
     def get_spatial_coverage(
@@ -635,7 +636,7 @@ class DHIAltimetryRepository:
         if date is None:
             return None
 
-        return pd.to_datetime(date)
+        return pd.to_datetime(date, format="ISO8601")
 
     @staticmethod
     def _validate_quality_filter(qa):
