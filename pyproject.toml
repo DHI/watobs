@@ -23,7 +23,7 @@ authors = [
 ]
 description = "Access water observation data"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.8"
 license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -37,8 +37,7 @@ classifiers = [
 [project.optional-dependencies]
 dev = [
   "pytest",
-  "flake8",
-  "black",
+  "ruff",
   "sphinx",
   "myst-parser",
   "sphinx-book-theme",
@@ -62,6 +61,11 @@ notebooks = [
   "netcdf4",
   "NDBC",
 ]
+
+[tool.ruff]
+include = ["pyproject.toml", "watobs/**/*.py"]
+# ignore long lines
+lint.ignore = ["E501"]
 
 [project.urls]
 "Homepage" = "https://github.com/DHI/watobs"
