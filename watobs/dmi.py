@@ -23,7 +23,6 @@ class DMIOceanObsRepository:
     """
 
     def __init__(self, api_key: str) -> None:
-
         self.__api__key = api_key
         self._stations = None
 
@@ -105,15 +104,14 @@ class DMIOceanObsRepository:
             end_time = pd.to_datetime(end_time)
 
         if start_time or end_time:
-
             if start_time and end_time is None:
                 params["datetime"] = f"{start_time.isoformat()}Z/.."
             elif end_time and start_time is None:
                 params["datetime"] = f"../{end_time.isoformat()}Z"
             else:
-                params[
-                    "datetime"
-                ] = f"{start_time.isoformat()}Z/{end_time.isoformat()}Z"
+                params["datetime"] = (
+                    f"{start_time.isoformat()}Z/{end_time.isoformat()}Z"
+                )
 
         resp = requests.get(
             "https://dmigw.govcloud.dk/v2/oceanObs/collections/observation/items",
@@ -136,7 +134,6 @@ class DMIOceanObsRepository:
             next_link = data["links"][1]["href"]
 
         while next_link and (len(ts) < limit):
-
             resp = requests.get(next_link)
             data = resp.json()
             if data["numberReturned"] == 0:
@@ -157,7 +154,6 @@ class DMIOceanObsRepository:
         return df
 
     def _data_to_ts(self, data, parameter_id):
-
         ts = [
             {
                 "time": p["properties"]["observed"].replace("Z", ""),

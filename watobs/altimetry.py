@@ -488,7 +488,7 @@ class DHIAltimetryRepository:
         satellites : str, list of str, optional
             Satellites to be downloaded, e.g. '', '3a', 'j3, by default ''
         qual_filters : int, list[int], optional
-            Accepted qualities 0=god, 1=acceptable, 2=bad, e.g. [0, 1], 
+            Accepted qualities 0=god, 1=acceptable, 2=bad, e.g. [0, 1],
             by default None meaning no filter (=all data)
 
         Examples
@@ -565,7 +565,7 @@ class DHIAltimetryRepository:
     # nan_value : str, optional
     #     Value to use to indicate bad or missing data, or an empty string to use the default (-9999). Default: ''.
     # qual_filters : int, list[int], optional
-    #         Accepted qualities 0=god, 1=acceptable, 2=bad, e.g. [0, 1], 
+    #         Accepted qualities 0=god, 1=acceptable, 2=bad, e.g. [0, 1],
     #         by default None meaning no filter (=all data)
     # # numeric : bool, optional
     #     If True, return columns as numeric and return fewer columns in order to comply with the Met-Ocean on Demand
@@ -586,7 +586,9 @@ class DHIAltimetryRepository:
         if nan_value:
             d["nodata"] = nan_value
         if qual_filters is not None:
-            qual_filters = qual_filters if hasattr(qual_filters, "__len__") else [qual_filters] 
+            qual_filters = (
+                qual_filters if hasattr(qual_filters, "__len__") else [qual_filters]
+            )
             if len(qual_filters) > 0:
                 d["qual_filters"] = str(qual_filters).strip("[] ").replace(" ", "")
         if numeric:
